@@ -9,7 +9,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddDbContext<DatabaseContext>();
 
-builder.Services.AddScoped<PokemonImageGrabber>();//Test
+builder.Services.AddScoped<PokemonImageGrabber>();
 
 var app = builder.Build();
 
