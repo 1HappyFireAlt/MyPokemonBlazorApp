@@ -1,0 +1,71 @@
+﻿@page "/Trainers"
+@rendermode InteractiveServer
+@inject DatabaseContext DbContext
+
+<h3>Trainers</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Companion</th>
+            <th scope="col">Edit</th>
+            <th scope="col">Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var Trainer in trainers)
+        {
+            <tr>
+                <td>@Trainer.Id</td>
+                <td>@Trainer.Name</td>
+                <td>@Trainer.Companion.Name</td>
+                <td>
+                    <button class="btn btn-success" @onclick="() => Edit(Trainer)">Edit</button>
+                </td>
+                <td>
+                    <button class="btn btn-danger" @onclick="() => Delete(Trainer)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code 
+{
+    private List<Trainer> trainers;
+    private EditContext editContext;
+    private Trainer model;
+    private bool showForm;
+
+    protected override void OnInitialized()
+    {
+        trainers = DbContext.Trainers.Include(t => t.Companion).ToList();
+    }
+
+    private async Task Submit()
+    {
+        if(model.Id == 0)
+        {
+            DbContext.Trainers.Add(model);
+        }
+        else
+        {
+            DbContext.Trainers.Update(model);
+        }
+        await DbContext.SaveChangesAsync();
+    }
+    private void Edit(Trainer trainers)
+    {
+        model = trainers;
+        editContext = new EditContext(model);
+        showForm = true;
+    }
+
+    private async Task Delete(Trainer trainers)
+    {
+        DbContext.Trainers.Remove(trainers);
+        await DbContext.SaveChangesAsync();
+    }
+}
