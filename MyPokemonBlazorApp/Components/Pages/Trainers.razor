@@ -4,6 +4,47 @@
 
 <h3>Trainers</h3>
 
+<div class="row g-0">
+    <div class="col-md-12">
+        <button class="btn btn-primary float-end" @onclick="ShowAddTrainer">
+            Add Trainer
+        </button> 
+    </div>
+</div>
+
+@if (showForm)
+{
+    <div class="card">
+        <div class="card-body bg-light">
+            <h4 class="card-title">
+                @(model.Id == 0 ? "Add Trainer" : "Edit Trainer")
+            </h4>
+            <EditForm OnInvalidSubmit="Submit" EditContext="editContext">
+                <DataAnnotationsValidator />
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="name" class="form-label">Name</label>
+                        <InputText class="form-control" placeholder="Name" @bind-Value="model.Name" />
+                        <ValidationMessage For="@(() => model.Name)" />
+                    </div>
+                    <div> class="col-md-6">
+                        <label for="type" class="form-label">Companion</label>
+                        <InputSelect class="form-select" placeholder="Companion" @bind-Value="model.Companion">
+                            @foreach (var Trainer in trainers)
+                            {
+                                <option value=""></option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary float-end">@(model.Id == 0 ? "Add Trainer" : "Edit Trainer")</button>
+                    </div
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
 <table class="table">
     <thead>
         <tr>
@@ -38,10 +79,37 @@
     private EditContext editContext;
     private Trainer model;
     private bool showForm;
+    private int companionId;
+
+    [Parameter]
+    public Trainer Model
+    {
+        get
+        {
+            return model;
+        }
+        set
+        {
+            model = value ?? new Trainer();
+            if (model.Companion is null)
+            {
+                model.Companion = new Pokemon();
+                companionId = model.Companion.Id;
+                editContext = new(model);
+            }
+        }
+    }
 
     protected override void OnInitialized()
     {
         trainers = DbContext.Trainers.Include(t => t.Companion).ToList();
+    }
+
+    private void ShowAddTrainer()
+    {
+        model = new Trainer();
+        editContext = new EditContext(model);
+        showForm = true;
     }
 
     private async Task Submit()
