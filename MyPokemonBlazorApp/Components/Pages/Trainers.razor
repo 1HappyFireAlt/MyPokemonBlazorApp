@@ -27,14 +27,15 @@
                         <InputText class="form-control" placeholder="Name" @bind-Value="model.Name" />
                         <ValidationMessage For="@(() => model.Name)" />
                     </div>
-                    <div> class="col-md-6">
+                    <div class="col-md-6">
                         <label for="type" class="form-label">Companion</label>
-                        <InputSelect class="form-select" placeholder="Companion" @bind-Value="model.Companion">
-                            @foreach (var Trainer in trainers)
+                        <InputSelect class="form-select" placeholder="Companion" @bind-Value="companionId">
+                            @foreach (var pokemon in pokemons)
                             {
-                                <option value=""></option>
+                                <option value="@pokemon.Id">@pokemon.Name</option>
                             }
                         </InputSelect>
+                        <ValidationMessage For="@(() => Model.Companion)" />
                     </div>
                     <div class="col-md-12">
                         <button type="submit" class="btn btn-primary float-end">@(model.Id == 0 ? "Add Trainer" : "Edit Trainer")</button>
@@ -61,6 +62,7 @@
             <tr>
                 <td>@Trainer.Id</td>
                 <td>@Trainer.Name</td>
+                <td>@Trainer.Companion.Id</td>
                 <td>@Trainer.Companion.Name</td>
                 <td>
                     <button class="btn btn-success" @onclick="() => Edit(Trainer)">Edit</button>
@@ -76,19 +78,18 @@
 @code 
 {
     private List<Trainer> trainers;
+    private List<Pokemon> pokemons;
     private EditContext editContext;
     private Trainer model;
-    private bool showForm;
     private int companionId;
+    private bool showForm;
 
-    [Parameter]
+
+   [Parameter]
     public Trainer Model
     {
-        get
-        {
-            return model;
-        }
-        set
+        get {return model;}
+        set 
         {
             model = value ?? new Trainer();
             if (model.Companion is null)
@@ -100,30 +101,13 @@
         }
     }
 
-    protected override void OnInitialized()
-    {
-        trainers = DbContext.Trainers.Include(t => t.Companion).ToList();
-    }
-
     private void ShowAddTrainer()
     {
         model = new Trainer();
         editContext = new EditContext(model);
         showForm = true;
-    }
-
-    private async Task Submit()
-    {
-        if(model.Id == 0)
-        {
-            DbContext.Trainers.Add(model);
-        }
-        else
-        {
-            DbContext.Trainers.Update(model);
-        }
-        await DbContext.SaveChangesAsync();
-    }
+    } 
+    
     private void Edit(Trainer trainers)
     {
         model = trainers;
@@ -131,9 +115,35 @@
         showForm = true;
     }
 
+    private async Task Submit()
+    {
+        if(model.Id == 0)
+            DbContext.Trainers.Add(model);
+        else
+            DbContext.Trainers.Update(model);
+
+        await DbContext.SaveChangesAsync();
+        await Refresh();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        pokemons = await DbContext.Pokemons.OrderBy(p => p.Name).ToListAsync();
+        await Refresh();
+    }
+
+    private async Task Refresh()
+    {
+        model = new Trainer();
+        editContext = new EditContext(model);
+        trainers = await DbContext.Trainers.ToListAsync();
+    }
+
     private async Task Delete(Trainer trainers)
     {
         DbContext.Trainers.Remove(trainers);
         await DbContext.SaveChangesAsync();
+        await Refresh();
     }
 }
+ 
