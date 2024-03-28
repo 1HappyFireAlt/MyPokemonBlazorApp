@@ -19,7 +19,7 @@
             <h4 class="card-title">
                 @(model.Id == 0 ? "Add Trainer" : "Edit Trainer")
             </h4>
-            <EditForm OnInvalidSubmit="Submit" EditContext="editContext">
+            <EditForm OnValidSubmit="Submit" EditContext="editContext">
                 <DataAnnotationsValidator />
                 <div class="row g-3">
                     <div class="col-md-3">
@@ -38,8 +38,8 @@
                         <ValidationMessage For="@(() => Model.Companion)" />
                     </div>
                     <div class="col-md-12">
-                        <button type="submit" class="btn btn-primary float-end">@(model.Id == 0 ? "Add Trainer" : "Edit Trainer")</button>
-                    </div
+                        <button type="submit" class="btn btn-primary float-end">@(model.Id == 0 ? "Add Trainer" : "Save Changes")</button>
+                    </div>
                 </div>
             </EditForm>
         </div>
@@ -62,7 +62,6 @@
             <tr>
                 <td>@Trainer.Id</td>
                 <td>@Trainer.Name</td>
-                <td>@Trainer.Companion.Id</td>
                 <td>@Trainer.Companion.Name</td>
                 <td>
                     <button class="btn btn-success" @onclick="() => Edit(Trainer)">Edit</button>
@@ -84,8 +83,10 @@
     private int companionId;
     private bool showForm;
 
+    [Parameter]
+    public EventCallback<bool> OnSaved { get; set; }
 
-   [Parameter]
+    [Parameter]
     public Trainer Model
     {
         get {return model;}
@@ -104,19 +105,24 @@
     private void ShowAddTrainer()
     {
         model = new Trainer();
+        model.Companion = new Pokemon();
+        companionId = model.Companion.Id;
         editContext = new EditContext(model);
         showForm = true;
     } 
-    
+
     private void Edit(Trainer trainers)
     {
         model = trainers;
+        companionId = model.Companion.Id;
         editContext = new EditContext(model);
         showForm = true;
     }
 
     private async Task Submit()
     {
+        Model.Companion = pokemons.Single(p => p.Id == companionId);
+
         if(model.Id == 0)
             DbContext.Trainers.Add(model);
         else
@@ -136,7 +142,8 @@
     {
         model = new Trainer();
         editContext = new EditContext(model);
-        trainers = await DbContext.Trainers.ToListAsync();
+        trainers = await DbContext.Trainers.Include(t => t.Companion).ToListAsync();
+        pokemons = await DbContext.Pokemons.ToListAsync();
     }
 
     private async Task Delete(Trainer trainers)
